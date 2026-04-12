@@ -1,0 +1,154 @@
+name: Auto Release
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: Version bump type
+        type: choice
+        options: [patch, minor, major]
+        default: patch
+
+permissions:
+  contents: write
+  pull-requests: read
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    # Skip commits created by this workflow or by scripts/release.ps1
+    if: github.event_name == 'workflow_dispatch' || !startsWith(github.event.head_commit.message, 'chore(release):')
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Determine bump type
+        id: bump
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            BUMP="${{ inputs.bump }}"
+            echo "Source: workflow_dispatch input"
+          else
+            SHA="${{ github.sha }}"
+            PR_NUMBER=$(gh api "repos/${{ github.repository }}/commits/${SHA}/pulls" --jq '.[0].number // empty' 2>/dev/null || true)
+
+            if [ -n "$PR_NUMBER" ]; then
+              LABELS=$(gh api "repos/${{ github.repository }}/issues/${PR_NUMBER}/labels" --jq '[.[].name] | join(",")' 2>/dev/null || echo "")
+              echo "Source: PR #${PR_NUMBER} labels = ${LABELS}"
+
+              if echo "$LABELS" | grep -qi "release:skip"; then
+                echo "skip=true" >> "$GITHUB_OUTPUT"
+                echo "release:skip label present - no release will be created"
+                exit 0
+              fi
+
+              if echo "$LABELS" | grep -qi "release:major"; then
+                BUMP="major"
+              elif echo "$LABELS" | grep -qi "release:minor"; then
+                BUMP="minor"
+              else
+                BUMP="patch"
+              fi
+            else
+              echo "Source: no PR found for ${SHA}, defaulting to patch"
+              BUMP="patch"
+            fi
+          fi
+
+          echo "bump=${BUMP}" >> "$GITHUB_OUTPUT"
+          echo "Bump type: ${BUMP}"
+
+      - name: Compute new version
+        if: steps.bump.outputs.skip != 'true'
+        id: version
+        run: |
+          CURRENT=$(python3 -c "import json; print(json.load(open('.claude-plugin/plugin.json'))['version'])")
+          BUMP="${{ steps.bump.outputs.bump }}"
+
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT"
+          case "$BUMP" in
+            major) MAJOR=$((MAJOR + 1)); MINOR=0; PATCH=0 ;;
+            minor) MINOR=$((MINOR + 1)); PATCH=0 ;;
+            patch) PATCH=$((PATCH + 1)) ;;
+          esac
+
+          NEW="${MAJOR}.${MINOR}.${PATCH}"
+          TAG="v${NEW}"
+
+          echo "current=${CURRENT}" >> "$GITHUB_OUTPUT"
+          echo "new=${NEW}" >> "$GITHUB_OUTPUT"
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+          echo "Version: ${CURRENT} -> ${NEW}"
+
+      - name: Verify tag does not exist
+        if: steps.bump.outputs.skip != 'true'
+        run: |
+          if git rev-parse "${{ steps.version.outputs.tag }}" >/dev/null 2>&1; then
+            echo "::error::Tag ${{ steps.version.outputs.tag }} already exists"
+            exit 1
+          fi
+
+      - name: Bump plugin.json
+        if: steps.bump.outputs.skip != 'true'
+        run: |
+          python3 <<PY
+          import json
+          p = json.load(open('.claude-plugin/plugin.json'))
+          p['version'] = '${{ steps.version.outputs.new }}'
+          with open('.claude-plugin/plugin.json', 'w', encoding='utf-8') as f:
+              json.dump(p, f, indent=2, ensure_ascii=False)
+              f.write('\n')
+          PY
+
+      - name: Commit, tag, push
+        if: steps.bump.outputs.skip != 'true'
+        run: |
+          git add .claude-plugin/plugin.json
+          git commit -m "chore(release): ${{ steps.version.outputs.new }}"
+          git tag -a "${{ steps.version.outputs.tag }}" -m "dev-team ${{ steps.version.outputs.tag }}"
+          git push origin main
+          git push origin "${{ steps.version.outputs.tag }}"
+
+      - name: Build release notes from commits
+        if: steps.bump.outputs.skip != 'true'
+        run: |
+          TAG="${{ steps.version.outputs.tag }}"
+          PREV_TAG=$(git tag --sort=-creatordate | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | grep -v "^${TAG}$" | head -n 1)
+
+          {
+            echo "## What's Changed"
+            echo
+            if [ -n "$PREV_TAG" ]; then
+              git log "${PREV_TAG}..${TAG}" --pretty=format:"- %s (%h)" --reverse
+              echo
+              echo
+              echo "**Full Changelog**: https://github.com/${{ github.repository }}/compare/${PREV_TAG}...${TAG}"
+            else
+              git log "${TAG}" --pretty=format:"- %s (%h)" --reverse
+              echo
+            fi
+          } > release-notes.md
+
+          echo "--- release notes preview ---"
+          cat release-notes.md
+
+      - name: Create GitHub Release
+        if: steps.bump.outputs.skip != 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "${{ steps.version.outputs.tag }}" \
+            --title "dev-team ${{ steps.version.outputs.tag }}" \
+            --notes-file release-notes.md
