@@ -7,9 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.1] - 2026-04-12
+
 ### Fixed
 - GitHub Actions release workflow: release notes are now passed through a file (`--notes-file`) instead of an inline shell string, so backtick-wrapped code (e.g. `` `dev-team` `` or `` `.dev-team/memory/` ``) is no longer stripped by shell interpolation.
-
 ## [1.0.0] - 2026-04-12
 
 ### Added
@@ -22,5 +23,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Self-hosted marketplace via `.claude-plugin/marketplace.json`.
 - MIT License.
 
-[Unreleased]: https://github.com/dgelios/dev-team/compare/v1.0.0...HEAD
+[Unreleased]: https://github.com/dgelios/dev-team/compare/v1.0.1...HEAD
+[1.0.1]: https://github.com/dgelios/dev-team/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/dgelios/dev-team/releases/tag/v1.0.0
