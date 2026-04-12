@@ -33,10 +33,32 @@ jobs:
             exit 1
           fi
 
+      - name: Build release notes from commits
+        run: |
+          TAG="${{ steps.version.outputs.tag }}"
+          PREV_TAG=$(git tag --sort=-creatordate | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | grep -v "^${TAG}$" | head -n 1)
+
+          {
+            echo "## What's Changed"
+            echo
+            if [ -n "$PREV_TAG" ]; then
+              git log "${PREV_TAG}..${TAG}" --pretty=format:"- %s (%h)" --reverse
+              echo
+              echo
+              echo "**Full Changelog**: https://github.com/dgelios/dev-team/compare/${PREV_TAG}...${TAG}"
+            else
+              git log "${TAG}" --pretty=format:"- %s (%h)" --reverse
+              echo
+            fi
+          } > release-notes.md
+
+          echo "--- release notes preview ---"
+          cat release-notes.md
+
       - name: Create GitHub Release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           gh release create "${{ steps.version.outputs.tag }}" \
             --title "dev-team ${{ steps.version.outputs.tag }}" \
-            --generate-notes
+            --notes-file release-notes.md
