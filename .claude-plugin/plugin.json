@@ -1,7 +1,7 @@
 {
   "name": "dev-team",
   "description": "6-role development pipeline for Claude Code: BA → TechLead → Dev → BA Review → Tester → optional Builder. Turns a one-line task into spec + code + tests + optional .exe.",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "author": {
     "name": "dgelios",
     "email": "d.gelios@gmail.com"
