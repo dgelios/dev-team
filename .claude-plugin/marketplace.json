@@ -1,0 +1,30 @@
+{
+  "name": "dgelios",
+  "owner": {
+    "name": "dgelios",
+    "email": "d.gelios@gmail.com"
+  },
+  "metadata": {
+    "description": "dgelios Claude Code plugins",
+    "version": "1.0.0"
+  },
+  "plugins": [
+    {
+      "name": "dev-team",
+      "source": "./",
+      "description": "6-role development pipeline: BA → TechLead → Dev → BA Review → Tester → optional Builder. Turns a one-line task into spec + code + tests + optional .exe.",
+      "category": "development",
+      "homepage": "https://github.com/dgelios/dev-team",
+      "tags": [
+        "pipeline",
+        "tdd",
+        "business-analyst",
+        "subagents",
+        "codegen",
+        "python",
+        "pyinstaller",
+        "spec-driven"
+      ]
+    }
+  ]
+}
