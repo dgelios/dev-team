@@ -39,30 +39,59 @@ Clone this repo and copy its contents into `~/.claude/plugins/cache/dgelios/dev-
 
 ## Usage
 
-From any project workspace:
+### Create a new project
 
 ```
-/dev-team:dev-team <task description>
+/dev-team:dev-team [--project <slug>] <task description>
 ```
 
-Examples:
+Without `--project`, the folder slug is derived from the first meaningful words of the task (e.g. `Build Passgen CLI With 3 Flags` → `build-passgen-cli-3`).
 
 ```
 /dev-team:dev-team implement a CSV parser that validates headers
-/dev-team:dev-team add feature: export results to JSON
-/dev-team:dev-team fix bug: login fails when email contains a plus sign
+/dev-team:dev-team --project csvtool implement a CSV parser that validates headers
 /dev-team:dev-team build a tkinter GUI for managing todo items and package as .exe
 ```
 
-The orchestrator decides whether to run the optional Builder stage based on the spec's tech stack (GUI libraries or explicit `.exe`/`executable`/`windowed` mentions trigger it).
+The initial run always produces **v1.0.0** of the project.
+
+### Improve an existing project
+
+```
+/dev-team:improve <project-slug> [--from <vX.Y.Z>] [--bump patch|minor|major] <improvement description>
+```
+
+- `--from` picks the base version (default: latest).
+- `--bump` forces a specific semver step (default: derived from BA classification).
+
+```
+/dev-team:improve csvtool add --strict flag that fails on unknown columns
+/dev-team:improve csvtool --bump patch fix off-by-one in header parser
+/dev-team:improve csvtool --from v1.0.0 --bump minor experimental ndjson output
+```
+
+The Business Analyst classifies every improvement as `bug-fix`, `doc-update`, `optimization`, `feature-add`, `refactor`, or `breaking`, which drives the semver step **and** which stages run.
+
+### Stage selection per classification
+
+| Classification | Semver step | Stages executed |
+|---|---|---|
+| `bug-fix` | patch | Dev → BA Review → Tester |
+| `doc-update` | patch | Dev |
+| `optimization` | patch | Tech Lead → Dev → BA Review → Tester |
+| `feature-add` | minor | Tech Lead → Dev → BA Review → Tester → Builder\* |
+| `refactor` | minor | Tech Lead → Dev → BA Review → Tester |
+| `breaking` | major | Tech Lead → Dev → BA Review → Tester → Builder\* |
+
+`Builder*` runs only if the spec signals a GUI library or `.exe` keyword.
 
 ## Artifacts
 
-Every run creates an isolated project folder under the current workspace:
+All state lives under `.dev-team/` inside the current workspace:
 
 ```
 .dev-team/
-├── memory/                                  ← lessons learned across runs (auto-seeded on first run)
+├── memory/                                  ← lessons learned across all projects (auto-seeded on first run)
 │   ├── ba-memory.md
 │   ├── techlead-memory.md
 │   ├── dev-memory.md
@@ -70,21 +99,36 @@ Every run creates an isolated project folder under the current workspace:
 │   ├── tester-memory.md
 │   └── builder-memory.md
 └── projects/
-    └── 20260412_143022_csv-parser-validation/
-        ├── task.md
-        ├── spec/spec.md
-        ├── code/
-        ├── tests/
-        ├── build/                           ← only if Builder ran
-        └── results/
-            ├── architecture.md
-            ├── dev-summary.md
-            ├── dev-files.json
-            ├── ba-review.md
-            ├── qa-report.md
-            ├── qa-files.json
-            └── test-results.md
+    └── csvtool/                             ← one folder per project (slug, no timestamp)
+        ├── v1.0.0/                          ← initial release
+        │   ├── task.md
+        │   ├── bump_type.txt                ← "initial"
+        │   ├── spec/spec.md
+        │   ├── code/
+        │   ├── tests/
+        │   ├── build/                       ← only if Builder ran
+        │   └── results/
+        │       ├── classification.txt       ← "initial"
+        │       ├── architecture.md
+        │       ├── dev-summary.md, dev-files.json
+        │       ├── ba-review.md
+        │       ├── qa-report.md, qa-files.json
+        │       └── test-results.md
+        ├── v1.0.1/                          ← bug fix
+        │   ├── task.md                      ← the improvement description
+        │   ├── parent_version.txt           ← "v1.0.0"
+        │   ├── bump_type.txt                ← "patch"
+        │   ├── spec/spec.md                 ← full amended spec (not a diff)
+        │   ├── code/                        ← starts as a copy of v1.0.0, edited in place
+        │   ├── tests/                       ← starts as a copy of v1.0.0, extended
+        │   └── results/
+        ├── v1.1.0/                          ← feature add
+        └── v2.0.0/                          ← breaking change
 ```
+
+Each version folder is a self-contained snapshot: `spec/`, `code/`, `tests/`, and `results/` are all final for that version. Parent versions are never modified once a newer version exists.
+
+The filesystem layout is produced and validated by `scripts/project_init.py`. The orchestrator invokes that script rather than creating directories directly, so the shape stays consistent.
 
 ## How the pipeline works
 
