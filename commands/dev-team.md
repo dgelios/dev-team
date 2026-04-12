@@ -1,6 +1,6 @@
 ---
-description: Run the 6-role dev-team pipeline on a task description
-argument-hint: "<task description>"
+description: Run the 6-role dev-team pipeline on a task description (creates v1.0.0 of a new project)
+argument-hint: "[--project <slug>] <task description>"
 ---
 
 # dev-team
@@ -8,7 +8,7 @@ argument-hint: "<task description>"
 Orchestrate a 6-role artifact-first development pipeline using project subagents:
 `dev-team-ba` → `dev-team-techlead` → `dev-team-dev` → `dev-team-ba-review` → `dev-team-tester` → `dev-team-builder` *(conditional)*.
 
-The task is:
+The raw arguments are:
 
 $ARGUMENTS
 
@@ -18,24 +18,33 @@ $ARGUMENTS
 
 When this command is invoked, you (the orchestrator) must:
 
-### 0. Setup
+### 0. Parse arguments
 
-1. Parse the task from the `$ARGUMENTS` above.
-2. Generate a timestamp slug: `YYYYMMDD_HHMMSS_<task-slug>` (slug = first 4 words, lowercase, hyphenated).
-3. Set `PROJECT_DIR = .dev-team/projects/<slug>/`
-4. Create the directory structure:
-   ```
-   PROJECT_DIR/
-     task.md
-     spec/
-     code/
-     tests/
-     results/
-   ```
-5. Write the task description to `task.md`.
-6. Confirm `PROJECT_DIR` and `task.md` exist before continuing.
+Raw `$ARGUMENTS` may contain an optional flag `--project <slug>` followed by the task description.
 
-### 0.5. Initialize memory (first run only)
+1. If the first token is `--project`, read the next token as PROJECT_SLUG and treat the rest as the TASK description. Validate that the slug matches `[a-z0-9-]+` — reject other characters.
+2. Otherwise, derive PROJECT_SLUG automatically from the task by running:
+   ```
+   python scripts/project_init.py slugify --text "<task>"
+   ```
+   Capture its stdout as PROJECT_SLUG.
+3. The full task text (without the `--project <slug>` prefix if present) becomes TASK.
+
+### 1. Create project skeleton
+
+1. Run:
+   ```
+   python scripts/project_init.py new --slug <PROJECT_SLUG>
+   ```
+2. If exit code is non-zero because the project already exists, stop and instruct the user to use `/dev-team:improve <slug> <description>` instead. Do NOT proceed with the pipeline.
+3. On success, parse the script's stdout to capture:
+   - `project_dir=...`
+   - `version=v1.0.0`
+   - `version_dir=...` → this is `PROJECT_DIR`
+4. Write the task description to `PROJECT_DIR/task.md`.
+5. Confirm `PROJECT_DIR` and `PROJECT_DIR/task.md` exist before continuing.
+
+### 1.5. Initialize memory (first run only)
 
 The plugin ships seed memory templates under its own `memory-templates/` directory. On first run in a workspace, copy them to the workspace-local `.dev-team/memory/` so agents can read and append lessons.
 
@@ -52,6 +61,7 @@ The plugin ships seed memory templates under its own `memory-templates/` directo
 | `TASK_PATH` | `task.md` |
 | `SPEC_PATH` | `spec/spec.md` |
 | `ARCHITECTURE_PATH` | `results/architecture.md` |
+| `CLASSIFICATION_PATH` | `results/classification.txt` |
 | `CODE_DIR` | `code/` |
 | `TESTS_DIR` | `tests/` |
 | `DEV_SUMMARY_PATH` | `results/dev-summary.md` |
@@ -71,6 +81,7 @@ The plugin ships seed memory templates under its own `memory-templates/` directo
 2. Invoke `dev-team-ba` in spec mode with:
    - `TASK_PATH`
    - `SPEC_PATH`
+   - `CLASSIFICATION_PATH` (BA should write `initial` there for new projects)
 3. Verify `SPEC_PATH` exists and is non-empty on disk before continuing.
 4. If STATUS is BLOCKED, stop and report to user.
 5. After success, append to `.dev-team/memory/ba-memory.md`:
@@ -171,10 +182,11 @@ Produce a concise human-readable summary. Do NOT paste full file contents.
 ```
 ## Dev-Team Pipeline Complete
 
-Project: <PROJECT_DIR>
-Task: <one-line task>
+Project: <PROJECT_SLUG>
+Version: <VERSION> (initial)
+Task:    <one-line task>
 
-Artifacts:
+Artifacts (under <PROJECT_DIR>):
   Spec:         <SPEC_PATH>
   Dev Summary:  <DEV_SUMMARY_PATH>
   BA Review:    <BA_REVIEW_PATH>
@@ -186,14 +198,19 @@ Test files:     <list from QA_FILELIST_PATH>
 Executable:     <EXE_PATH if Builder ran, otherwise "N/A">
 
 Final Verdict: ✅ PASS  |  ❌ FAIL  |  ❌ BLOCKED
+
+Next steps:
+  To improve this project, run: /dev-team:improve <PROJECT_SLUG> <improvement description>
 ```
 
 ---
 
 ## Rules
 
-- One task = one project artifact folder.
-- After the project folder exists, agents must pass paths — not large pasted payloads.
+- One task = one project folder; one run of this command = v1.0.0 inside that project.
+- Subsequent changes must go through `/dev-team:improve`, not this command.
+- All filesystem shape (project folder, version folder, skeleton, code/tests copy) is produced by `scripts/project_init.py`. Do not create these directories by hand.
+- After the version folder exists, agents must pass paths — not large pasted payloads.
 - Never rely on chat history as artifact transport.
 - Every claimed artifact path must be verified on disk before the next stage begins.
 - Keep receipts tiny; do not paste full specs/code/reviews in receipts once artifact files exist.
