@@ -2,14 +2,27 @@
 
 A Claude Code plugin that turns a one-line task description into a fully specified, implemented, reviewed, and tested project — with an optional `.exe` build at the end.
 
-Six specialised subagents run as a pipeline, each producing disk artifacts that the next stage consumes:
+Six specialised subagents run as a pipeline, each producing disk artifacts that the next stage consumes. Review stages can send work **back to the Developer** when a previous stage did not meet the spec:
 
+```mermaid
+flowchart LR
+    BA["BA<br/>spec.md"] --> TL["TechLead<br/>architecture.md"]
+    TL --> Dev["Dev<br/>code/"]
+    Dev --> BR["BA Review<br/>ba-review.md"]
+    BR -->|CHANGES REQUESTED<br/>max 1 iteration| Dev
+    BR -->|APPROVED| Test["Tester<br/>qa-report.md"]
+    Test -->|FAIL<br/>max 3 iterations| Dev
+    Test -->|PASS| Build["Builder<br/>dist/*.exe<br/>(optional)"]
 ```
-BA ──▶ TechLead ──▶ Dev ──▶ BA Review ──▶ Tester ──▶ Builder (optional)
- │         │         │          │            │           │
- ▼         ▼         ▼          ▼            ▼           ▼
-spec.md  architecture.md   code/   ba-review.md   qa-report.md   dist/*.exe
-```
+
+### Gates
+
+| Gate | Possible verdicts | Action on failure |
+|---|---|---|
+| Any stage | `BLOCKED` | Pipeline stops, user is asked for input |
+| BA Review (Stage 3) | `APPROVED` / `CHANGES REQUESTED` | Dev fix pass + BA Review re-run (max 1 iteration) |
+| Tester (Stage 4) | `PASS` / `FAIL` | Dev fix pass + Tester re-run (max 3 iterations) |
+| Builder (Stage 5, optional) | `OK` / `FAILED` | Reported to user, no auto-retry |
 
 ## Install
 
