@@ -34,10 +34,9 @@ jobs:
           fi
 
       - name: Extract CHANGELOG section
-        id: changelog
         run: |
           python3 - <<'PY'
-          import os, re, sys
+          import os, re
 
           version = os.environ["VERSION"]
           tag = os.environ["TAG"]
@@ -45,20 +44,17 @@ jobs:
               text = open("CHANGELOG.md", encoding="utf-8").read()
           except FileNotFoundError:
               body = f"Release {tag}"
-              with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as fh:
-                  fh.write(f"body<<__EOF__\n{body}\n__EOF__\n")
-              sys.exit(0)
+              open("release-notes.md", "w", encoding="utf-8").write(body)
+              raise SystemExit(0)
 
           pattern = rf"(?ms)^## \[{re.escape(version)}\][^\n]*\n(?P<body>.*?)(?=^## \[|\Z)"
           m = re.search(pattern, text)
-          body = m.group("body").strip() if m else f"Release {tag}"
+          body = m.group("body").strip() if m else ""
           if not body:
               body = f"Release {tag}"
 
-          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as fh:
-              fh.write("body<<__EOF__\n")
-              fh.write(body + "\n")
-              fh.write("__EOF__\n")
+          with open("release-notes.md", "w", encoding="utf-8") as fh:
+              fh.write(body)
           PY
         env:
           VERSION: ${{ steps.version.outputs.version }}
@@ -70,4 +66,4 @@ jobs:
         run: |
           gh release create "${{ steps.version.outputs.tag }}" \
             --title "dev-team ${{ steps.version.outputs.tag }}" \
-            --notes "${{ steps.changelog.outputs.body }}"
+            --notes-file release-notes.md
