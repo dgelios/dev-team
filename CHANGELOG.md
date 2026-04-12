@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- GitHub Actions release workflow: release notes are now passed through a file (`--notes-file`) instead of an inline shell string, so backtick-wrapped code (e.g. `` `dev-team` `` or `` `.dev-team/memory/` ``) is no longer stripped by shell interpolation.
+
 ## [1.0.0] - 2026-04-12
 
 ### Added
