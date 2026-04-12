@@ -42,16 +42,16 @@ Clone this repo and copy its contents into `~/.claude/plugins/cache/dgelios/dev-
 From any project workspace:
 
 ```
-/dev-team <task description>
+/dev-team:dev-team <task description>
 ```
 
 Examples:
 
 ```
-/dev-team implement a CSV parser that validates headers
-/dev-team add feature: export results to JSON
-/dev-team fix bug: login fails when email contains a plus sign
-/dev-team build a tkinter GUI for managing todo items and package as .exe
+/dev-team:dev-team implement a CSV parser that validates headers
+/dev-team:dev-team add feature: export results to JSON
+/dev-team:dev-team fix bug: login fails when email contains a plus sign
+/dev-team:dev-team build a tkinter GUI for managing todo items and package as .exe
 ```
 
 The orchestrator decides whether to run the optional Builder stage based on the spec's tech stack (GUI libraries or explicit `.exe`/`executable`/`windowed` mentions trigger it).
