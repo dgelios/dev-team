@@ -42,7 +42,28 @@ jobs:
             echo "Source: workflow_dispatch input"
           else
             SHA="${{ github.sha }}"
-            PR_NUMBER=$(gh api "repos/${{ github.repository }}/commits/${SHA}/pulls" --jq '.[0].number // empty' 2>/dev/null || true)
+            PR_NUMBER=""
+
+            # 1. Try the direct API up to 5 times - GitHub sometimes needs a few seconds
+            #    to index the commit<->PR association after a merge.
+            for attempt in 1 2 3 4 5; do
+              PR_NUMBER=$(gh api "repos/${{ github.repository }}/commits/${SHA}/pulls" --jq '.[0].number // empty' 2>/dev/null || true)
+              if [ -n "$PR_NUMBER" ]; then
+                echo "PR resolved via API on attempt ${attempt}"
+                break
+              fi
+              echo "Attempt ${attempt}: API returned no PR for ${SHA}, retrying in 5s..."
+              sleep 5
+            done
+
+            # 2. Fallback: parse the merge commit message for 'Merge pull request #N'.
+            if [ -z "$PR_NUMBER" ]; then
+              SUBJECT="${{ github.event.head_commit.message }}"
+              PR_NUMBER=$(echo "$SUBJECT" | grep -oE '#[0-9]+' | head -n 1 | tr -d '#')
+              if [ -n "$PR_NUMBER" ]; then
+                echo "PR resolved from commit message: #${PR_NUMBER}"
+              fi
+            fi
 
             if [ -n "$PR_NUMBER" ]; then
               LABELS=$(gh api "repos/${{ github.repository }}/issues/${PR_NUMBER}/labels" --jq '[.[].name] | join(",")' 2>/dev/null || echo "")
@@ -62,7 +83,7 @@ jobs:
                 BUMP="patch"
               fi
             else
-              echo "Source: no PR found for ${SHA}, defaulting to patch"
+              echo "Source: no PR found for ${SHA} after retries and message parse, defaulting to patch"
               BUMP="patch"
             fi
           fi
