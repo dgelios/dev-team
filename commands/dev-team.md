@@ -175,6 +175,22 @@ Run this stage only if the spec's `## Tech Stack` mentions a GUI library (tkinte
 
 ---
 
+### Stage 6 — Changelog
+
+Always runs as the final artifact step, regardless of classification or Builder outcome. Produces `CHANGELOG.md` at the version folder root next to `bump_type.txt`.
+
+1. Run:
+   ```
+   python scripts/changelog_gen.py --slug <PROJECT_SLUG> --version v1.0.0
+   ```
+2. For an initial release (this command always writes v1.0.0), the script emits:
+   - Project overview taken from `task.md`
+   - `## Key requirements` listing [MUST] and [SHOULD] requirements parsed from `spec/spec.md`
+3. Verify `<PROJECT_DIR>/CHANGELOG.md` exists and is non-empty.
+4. Include the changelog path in the Final Report under `Artifacts`.
+
+---
+
 ### Final Report
 
 Produce a concise human-readable summary. Do NOT paste full file contents.
@@ -192,6 +208,7 @@ Artifacts (under <PROJECT_DIR>):
   BA Review:    <BA_REVIEW_PATH>
   QA Report:    <QA_REPORT_PATH>
   Test Results: <TEST_RESULTS_PATH>
+  Changelog:    <PROJECT_DIR>/CHANGELOG.md
 
 Source files:   <list from DEV_FILELIST_PATH>
 Test files:     <list from QA_FILELIST_PATH>

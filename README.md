@@ -103,6 +103,7 @@ All state lives under `.dev-team/` inside the current workspace:
         ├── v1.0.0/                          ← initial release
         │   ├── task.md
         │   ├── bump_type.txt                ← "initial"
+        │   ├── CHANGELOG.md                 ← auto-generated (overview + MUST/SHOULD from spec)
         │   ├── spec/spec.md
         │   ├── code/
         │   ├── tests/
@@ -118,6 +119,7 @@ All state lives under `.dev-team/` inside the current workspace:
         │   ├── task.md                      ← the improvement description
         │   ├── parent_version.txt           ← "v1.0.0"
         │   ├── bump_type.txt                ← "patch"
+        │   ├── CHANGELOG.md                 ← auto-generated (code/tests/spec diff vs v1.0.0)
         │   ├── spec/spec.md                 ← full amended spec (not a diff)
         │   ├── code/                        ← starts as a copy of v1.0.0, edited in place
         │   ├── tests/                       ← starts as a copy of v1.0.0, extended
