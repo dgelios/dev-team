@@ -39,6 +39,12 @@ param(
 
 $ErrorActionPreference = 'Stop'
 
+# Hard-coded personal identity for this repo.
+# This prevents any git config override (including the global work identity)
+# from leaking into commits pushed to the dgelios/dev-team repo.
+$AuthorName  = 'dgelios'
+$AuthorEmail = 'd.gelios@gmail.com'
+
 # Resolve repo root (script lives in scripts/)
 $RepoRoot = Resolve-Path (Join-Path $PSScriptRoot '..')
 Set-Location $RepoRoot
@@ -47,6 +53,14 @@ $PluginJsonPath = Join-Path $RepoRoot '.claude-plugin/plugin.json'
 
 if (-not (Test-Path -LiteralPath $PluginJsonPath)) {
     throw "Required file not found: $PluginJsonPath"
+}
+
+# Guard: refuse to release if the effective git identity is anything other than $AuthorEmail.
+# This catches the case where a bad global config would otherwise produce a commit with the wrong author.
+$effectiveName  = (git config user.name  2>$null)
+$effectiveEmail = (git config user.email 2>$null)
+if ($effectiveEmail -ne $AuthorEmail) {
+    throw "Effective git user.email is '$effectiveEmail', expected '$AuthorEmail'. Fix git config (locally: git config user.email $AuthorEmail) and retry."
 }
 
 # --- Safety checks ---------------------------------------------------------
@@ -139,10 +153,17 @@ if ($DryRun) {
 }
 
 git add $PluginJsonPath
-git commit -m "chore(release): $newVersion"
+
+# Explicit author + committer via -c overrides any ambient config.
+$env:GIT_AUTHOR_NAME     = $AuthorName
+$env:GIT_AUTHOR_EMAIL    = $AuthorEmail
+$env:GIT_COMMITTER_NAME  = $AuthorName
+$env:GIT_COMMITTER_EMAIL = $AuthorEmail
+
+git -c "user.name=$AuthorName" -c "user.email=$AuthorEmail" commit -m "chore(release): $newVersion"
 if ($LASTEXITCODE -ne 0) { throw "git commit failed." }
 
-git tag -a $tag -m "dev-team $tag"
+git -c "user.name=$AuthorName" -c "user.email=$AuthorEmail" tag -a $tag -m "dev-team $tag"
 if ($LASTEXITCODE -ne 0) { throw "git tag failed." }
 
 git push origin main
