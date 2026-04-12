@@ -4,10 +4,9 @@
     Release a new version of the dev-team plugin.
 
 .DESCRIPTION
-    Bumps the version in .claude-plugin/plugin.json, rotates CHANGELOG.md
-    ([Unreleased] -> [X.Y.Z] - YYYY-MM-DD), commits, tags, and pushes to origin.
-    A GitHub Release with extracted CHANGELOG notes is created by the
-    .github/workflows/release.yml workflow when the tag push is detected.
+    Bumps the version in .claude-plugin/plugin.json, commits, tags, and pushes
+    to origin. .github/workflows/release.yml then creates a GitHub Release with
+    notes auto-generated from commit messages since the previous tag.
 
 .PARAMETER Bump
     One of 'patch', 'minor', 'major'. Mutually exclusive with -Version.
@@ -45,16 +44,10 @@ $RepoRoot = Resolve-Path (Join-Path $PSScriptRoot '..')
 Set-Location $RepoRoot
 
 $PluginJsonPath = Join-Path $RepoRoot '.claude-plugin/plugin.json'
-$ChangelogPath  = Join-Path $RepoRoot 'CHANGELOG.md'
 
-function Assert-File([string]$Path) {
-    if (-not (Test-Path -LiteralPath $Path)) {
-        throw "Required file not found: $Path"
-    }
+if (-not (Test-Path -LiteralPath $PluginJsonPath)) {
+    throw "Required file not found: $PluginJsonPath"
 }
-
-Assert-File $PluginJsonPath
-Assert-File $ChangelogPath
 
 # --- Safety checks ---------------------------------------------------------
 
@@ -110,15 +103,22 @@ if ($existingTag) {
     throw "Tag $tag already exists."
 }
 
-$today = (Get-Date).ToString('yyyy-MM-dd')
-
 Write-Host "Release plan:" -ForegroundColor Cyan
 Write-Host "  Current version : $currentVersion"
 Write-Host "  New version     : $newVersion"
 Write-Host "  Tag             : $tag"
-Write-Host "  Date            : $today"
 Write-Host "  Dry run         : $DryRun"
 Write-Host ""
+
+# --- Preview commit messages that will become release notes ----------------
+
+$prevTag = "v$currentVersion"
+$commitList = git log "$prevTag..HEAD" --pretty=format:"- %s" 2>$null
+if ($commitList) {
+    Write-Host "Commits that will be in the release notes:" -ForegroundColor Cyan
+    $commitList | ForEach-Object { Write-Host "  $_" }
+    Write-Host ""
+}
 
 # --- Update plugin.json ----------------------------------------------------
 
@@ -130,58 +130,6 @@ if (-not $DryRun) {
 }
 Write-Host "[OK] plugin.json version -> $newVersion"
 
-# --- Rotate CHANGELOG.md ---------------------------------------------------
-
-$changelog = Get-Content -LiteralPath $ChangelogPath -Raw
-
-# Require an [Unreleased] section with at least one content line, else block.
-$unreleasedPattern = '(?ms)^## \[Unreleased\]\s*\r?\n(?<body>.*?)(?=^## \[|\Z)'
-$match = [regex]::Match($changelog, $unreleasedPattern)
-if (-not $match.Success) {
-    throw "CHANGELOG.md has no [Unreleased] section. Add it before running release."
-}
-$unreleasedBody = $match.Groups['body'].Value
-
-# Trim leading/trailing blank lines; keep internal structure.
-$trimmedBody = $unreleasedBody -replace '^(\s*\r?\n)+', '' -replace '(\s*\r?\n)+$', ''
-
-if (-not $trimmedBody.Trim()) {
-    throw "CHANGELOG.md [Unreleased] section is empty. Add entries before running release."
-}
-
-# Build replacement: new empty [Unreleased] + new [X.Y.Z] with rotated body
-$replacement = @"
-## [Unreleased]
-
-## [$newVersion] - $today
-
-$trimmedBody
-
-"@
-
-$newChangelog = [regex]::Replace(
-    $changelog,
-    $unreleasedPattern,
-    { param($m) $replacement },
-    'Singleline, Multiline'
-)
-
-# Update footer compare links if present
-$newChangelog = $newChangelog -replace '\[Unreleased\]: https://github.com/dgelios/dev-team/compare/v[\d.]+\.\.\.HEAD', "[Unreleased]: https://github.com/dgelios/dev-team/compare/$tag...HEAD"
-
-# Insert new version compare link if it doesn't exist
-if ($newChangelog -notmatch "\[$newVersion\]:") {
-    $prevTag = "v$currentVersion"
-    $newLink = "[$newVersion]: https://github.com/dgelios/dev-team/compare/$prevTag...$tag"
-    # Append before the v-prev line
-    $newChangelog = $newChangelog -replace "(\[$currentVersion\]: https://github\.com/dgelios/dev-team/releases/tag/v$currentVersion)", "$newLink`n`$1"
-}
-
-if (-not $DryRun) {
-    Set-Content -LiteralPath $ChangelogPath -Value $newChangelog -NoNewline -Encoding UTF8
-}
-Write-Host "[OK] CHANGELOG.md rotated [Unreleased] -> [$newVersion] - $today"
-
 # --- Commit, tag, push -----------------------------------------------------
 
 if ($DryRun) {
@@ -190,7 +138,7 @@ if ($DryRun) {
     exit 0
 }
 
-git add $PluginJsonPath $ChangelogPath
+git add $PluginJsonPath
 git commit -m "chore(release): $newVersion"
 if ($LASTEXITCODE -ne 0) { throw "git commit failed." }
 

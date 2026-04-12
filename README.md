@@ -139,21 +139,21 @@ Claude Code will then check this marketplace on every start and pull the newest 
 /plugin list
 ```
 
-The current release line for this plugin is in [CHANGELOG.md](./CHANGELOG.md). The latest release is at https://github.com/dgelios/dev-team/releases/latest.
+The latest release is at https://github.com/dgelios/dev-team/releases/latest.
 
 ## Releasing (for maintainers)
 
 Releases are driven by a single command locally, then finalized by GitHub Actions.
 
-1. Add your changes to `CHANGELOG.md` under `## [Unreleased]`.
-2. Run the release script:
-   ```powershell
-   pwsh scripts/release.ps1 -Bump patch   # or -Bump minor / -Bump major / -Version X.Y.Z
-   ```
-3. The script bumps `plugin.json`, rotates the changelog into `[X.Y.Z] - YYYY-MM-DD`, commits, tags `vX.Y.Z`, and pushes.
-4. `.github/workflows/release.yml` picks up the tag, validates that `plugin.json` matches, extracts the CHANGELOG section, and creates a GitHub Release automatically.
+```powershell
+pwsh scripts/release.ps1 -Bump patch   # or -Bump minor / -Bump major / -Version X.Y.Z
+```
 
-Use `-DryRun` to see what would change without writing anything.
+The script bumps `.claude-plugin/plugin.json`, commits, tags `vX.Y.Z`, and pushes. `.github/workflows/release.yml` picks up the tag, validates that `plugin.json` matches, and creates a GitHub Release whose notes are auto-generated from commit messages since the previous tag.
+
+Write clear commit messages (e.g. `feat: add abort command`, `fix: handle empty spec`) — those lines become the release notes.
+
+Use `-DryRun` to preview the version bump and the commit list without touching anything.
 
 ## License
 
