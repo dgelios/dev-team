@@ -108,6 +108,53 @@ On first run in a workspace, the plugin auto-seeds `.dev-team/memory/` with empt
 - **Python 3.10+** — needed whenever the pipeline generates Python code
 - **PyInstaller** — only for the optional Builder stage (`pip install pyinstaller`)
 
+## Updating
+
+### Auto-update (recommended)
+
+Once the plugin is installed, open `~/.claude/settings.json` and enable auto-update for the `dgelios` marketplace:
+
+```json
+{
+  "extraKnownMarketplaces": {
+    "dgelios": {
+      "autoUpdate": true
+    }
+  }
+}
+```
+
+Claude Code will then check this marketplace on every start and pull the newest `version` from `plugin.json` when one is available. After an update you will be asked to run `/reload-plugins` to activate the new code.
+
+### Manual update
+
+```
+/plugin marketplace update dgelios
+/plugin update dev-team@dgelios
+```
+
+### Check installed version
+
+```
+/plugin list
+```
+
+The current release line for this plugin is in [CHANGELOG.md](./CHANGELOG.md). The latest release is at https://github.com/dgelios/dev-team/releases/latest.
+
+## Releasing (for maintainers)
+
+Releases are driven by a single command locally, then finalized by GitHub Actions.
+
+1. Add your changes to `CHANGELOG.md` under `## [Unreleased]`.
+2. Run the release script:
+   ```powershell
+   pwsh scripts/release.ps1 -Bump patch   # or -Bump minor / -Bump major / -Version X.Y.Z
+   ```
+3. The script bumps `plugin.json`, rotates the changelog into `[X.Y.Z] - YYYY-MM-DD`, commits, tags `vX.Y.Z`, and pushes.
+4. `.github/workflows/release.yml` picks up the tag, validates that `plugin.json` matches, extracts the CHANGELOG section, and creates a GitHub Release automatically.
+
+Use `-DryRun` to see what would change without writing anything.
+
 ## License
 
 MIT

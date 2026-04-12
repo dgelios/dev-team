@@ -1,0 +1,73 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Extract version
+        id: version
+        run: |
+          TAG="${GITHUB_REF#refs/tags/}"
+          VERSION="${TAG#v}"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Verify plugin.json matches tag
+        run: |
+          FILE_VERSION=$(python3 -c "import json; print(json.load(open('.claude-plugin/plugin.json'))['version'])")
+          if [ "$FILE_VERSION" != "${{ steps.version.outputs.version }}" ]; then
+            echo "::error::Tag version ${{ steps.version.outputs.version }} does not match plugin.json version $FILE_VERSION"
+            exit 1
+          fi
+
+      - name: Extract CHANGELOG section
+        id: changelog
+        run: |
+          python3 - <<'PY'
+          import os, re, sys
+
+          version = os.environ["VERSION"]
+          tag = os.environ["TAG"]
+          try:
+              text = open("CHANGELOG.md", encoding="utf-8").read()
+          except FileNotFoundError:
+              body = f"Release {tag}"
+              with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as fh:
+                  fh.write(f"body<<__EOF__\n{body}\n__EOF__\n")
+              sys.exit(0)
+
+          pattern = rf"(?ms)^## \[{re.escape(version)}\][^\n]*\n(?P<body>.*?)(?=^## \[|\Z)"
+          m = re.search(pattern, text)
+          body = m.group("body").strip() if m else f"Release {tag}"
+          if not body:
+              body = f"Release {tag}"
+
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as fh:
+              fh.write("body<<__EOF__\n")
+              fh.write(body + "\n")
+              fh.write("__EOF__\n")
+          PY
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          TAG: ${{ steps.version.outputs.tag }}
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "${{ steps.version.outputs.tag }}" \
+            --title "dev-team ${{ steps.version.outputs.tag }}" \
+            --notes "${{ steps.changelog.outputs.body }}"
