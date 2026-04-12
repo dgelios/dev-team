@@ -178,6 +178,24 @@ Same as `/dev-team:dev-team` Stage 5. Only runs for classifications `feature-add
 
 ---
 
+### Stage 6 — Changelog
+
+Always runs as the final artifact step, regardless of classification or Builder outcome. Produces `CHANGELOG.md` at the new version folder root next to `bump_type.txt` and `parent_version.txt`.
+
+1. Run:
+   ```
+   python scripts/changelog_gen.py --slug <PROJECT_SLUG> --version <NEW_VERSION>
+   ```
+2. Because `parent_version.txt` exists on disk, the script emits an improvement-style changelog:
+   - `## Change request` section from `task.md`
+   - `## Source code changes` with added/modified/removed file lists (diffed against the parent version's `code/`)
+   - `## Test changes` with added/modified/removed file lists (diffed against the parent version's `tests/`)
+   - `## Specification changes` with new/removed requirements (parsed from the `## Requirements` section of both spec files)
+3. Verify `<PROJECT_DIR>/CHANGELOG.md` exists and is non-empty.
+4. Include the changelog path in the Final Report under `Artifacts`.
+
+---
+
 ### Final Report
 
 ```
@@ -195,6 +213,7 @@ Artifacts (under .dev-team/projects/<PROJECT_SLUG>/<NEW_VERSION>/):
   BA Review:    <BA_REVIEW_PATH or <skipped>>
   QA Report:    <QA_REPORT_PATH or <skipped>>
   Test Results: <TEST_RESULTS_PATH or <skipped>>
+  Changelog:    <PROJECT_DIR>/CHANGELOG.md
 
 Source files:   <list from DEV_FILELIST_PATH>
 Test files:     <list from QA_FILELIST_PATH or <skipped>>
