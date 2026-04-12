@@ -1,7 +1,7 @@
 ---
 name: dev-team-ba
 description: Business Analyst agent. Writes structured Markdown specs from task descriptions. Spec mode only — produces spec/spec.md. No code output.
-model: claude-sonnet-4-6
+model: claude-opus-4-6
 ---
 
 # Agent: dev-team-ba
