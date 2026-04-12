@@ -143,15 +143,30 @@ The latest release is at https://github.com/dgelios/dev-team/releases/latest.
 
 ## Releasing (for maintainers)
 
-Releases are driven by a single command locally, then finalized by GitHub Actions.
+There are two release flows — pick whichever fits the situation.
+
+### Flow A: automatic on PR merge (default)
+
+Merge any PR into `main` and `.github/workflows/auto-release.yml` will bump the version, tag, push, and publish a GitHub Release automatically.
+
+- **Default bump: `patch`** (e.g. 1.0.4 → 1.0.5)
+- Override with a **PR label** before merging:
+  - `release:minor` → 1.0.5 → 1.1.0
+  - `release:major` → 1.0.5 → 2.0.0
+  - `release:skip` → merge without creating a release
+- The workflow can also be triggered from the Actions tab with a specific bump via **Run workflow**.
+
+Release notes are built from every commit between the previous tag and the new one, so writing clear commit messages (e.g. `feat: add abort command`, `fix: handle empty spec`) is all that is needed.
+
+### Flow B: manual from your local machine
+
+Useful when you want to release without going through a PR (e.g. quick docs-only release, or re-releasing from a tag).
 
 ```powershell
 pwsh scripts/release.ps1 -Bump patch   # or -Bump minor / -Bump major / -Version X.Y.Z
 ```
 
-The script bumps `.claude-plugin/plugin.json`, commits, tags `vX.Y.Z`, and pushes. `.github/workflows/release.yml` picks up the tag, validates that `plugin.json` matches, and creates a GitHub Release whose notes are auto-generated from commit messages since the previous tag.
-
-Write clear commit messages (e.g. `feat: add abort command`, `fix: handle empty spec`) — those lines become the release notes.
+The script bumps `.claude-plugin/plugin.json`, commits, tags `vX.Y.Z`, and pushes. `.github/workflows/release.yml` picks up the tag and publishes the GitHub Release.
 
 Use `-DryRun` to preview the version bump and the commit list without touching anything.
 
