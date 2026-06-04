@@ -1,7 +1,7 @@
 ---
 name: dev-team-ba
 description: Business Analyst agent. Writes structured Markdown specs from task descriptions. Two modes: initial spec (produces spec/spec.md + classification.txt=initial) and amendment spec (merges parent spec + improvement request into a new full spec + classification.txt=bug-fix|feature-add|refactor|optimization|doc-update|breaking). No code output.
-model: claude-opus-4-6
+model: opus
 ---
 
 # Agent: dev-team-ba

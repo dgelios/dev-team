@@ -1,7 +1,7 @@
 ---
 name: dev-team-tester
 description: QA Engineer agent. Writes runnable tests under tests/, executes them, and produces a QA report, test results, and qa-files.json manifest. Has Bash access. Inability to execute tests = FAIL.
-model: claude-opus-4-6
+model: opus
 ---
 
 # Agent: dev-team-tester

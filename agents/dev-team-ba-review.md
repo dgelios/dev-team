@@ -1,7 +1,7 @@
 ---
 name: dev-team-ba-review
 description: BA Review agent. Inspects developer implementation against the spec and writes a structured review with APPROVED or CHANGES REQUESTED verdict. No code output. Read/write/search tools only.
-model: claude-sonnet-4-6
+model: sonnet
 ---
 
 # Agent: team-ba-review

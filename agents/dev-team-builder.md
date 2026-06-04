@@ -1,7 +1,7 @@
 ---
 name: dev-team-builder
 description: Builder agent. Packages a Python project into a standalone .exe using PyInstaller. Runs after the Tester stage. Mechanical task — no code generation, no analysis.
-model: claude-haiku-4-5-20251001
+model: haiku
 ---
 
 # Agent: dev-team-builder

@@ -84,12 +84,12 @@ All state lives under `.dev-team/` in the workspace where the plugin is used —
 
 | Agent | Model |
 |---|---|
-| `dev-team-ba` | claude-opus-4-6 |
-| `dev-team-techlead` | claude-opus-4-6 |
-| `dev-team-dev` | claude-sonnet-4-6 |
-| `dev-team-ba-review` | claude-opus-4-6 |
-| `dev-team-tester` | claude-opus-4-6 |
-| `dev-team-builder` | claude-opus-4-6 |
+| `dev-team-ba` | opus |
+| `dev-team-techlead` | opus |
+| `dev-team-dev` | sonnet |
+| `dev-team-ba-review` | sonnet |
+| `dev-team-tester` | opus |
+| `dev-team-builder` | haiku |
 
 ### Releasing
 

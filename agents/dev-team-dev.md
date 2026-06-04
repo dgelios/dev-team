@@ -1,7 +1,7 @@
 ---
 name: dev-team-dev
 description: Developer agent. Implements code from a BA spec and Tech Lead architecture plan. Writes source files under code/, a dev summary, and a dev-files.json manifest. Has Bash access for running build/install commands if needed.
-model: claude-sonnet-4-6
+model: sonnet
 ---
 
 # Agent: dev-team-dev

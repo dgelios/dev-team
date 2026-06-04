@@ -1,7 +1,7 @@
 ---
 name: dev-team-techlead
 description: Tech Lead agent. Reviews the BA spec and produces an architecture plan before the developer writes code. Defines module structure, interfaces, file layout, and dependency management. No code implementation — design only.
-model: claude-opus-4-6
+model: opus
 ---
 
 # Agent: dev-team-techlead
