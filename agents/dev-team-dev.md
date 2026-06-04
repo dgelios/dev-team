@@ -33,6 +33,7 @@ You may also receive a `BA_REVIEW_PATH` on a fix pass — read it and address al
    - What files to create (from architecture plan)
    - What each module's public interface is
    - What external dependencies are required
+   - Which spec requirements each module covers (from the plan's `## Requirement Mapping`) — when implementing a module, re-check the mapped requirements in the spec so none is missed
 5. Install dependencies if needed: `pip install -r requirements.txt` or equivalent.
 6. Implement the code under `CODE_DIR` following the architecture plan.
 7. Write `requirements.txt` under `CODE_DIR` (copy from architecture plan's dependency list).

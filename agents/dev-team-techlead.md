@@ -70,6 +70,16 @@ Example:
 ### search.py
 - `fuzzy_search(notes: list[Note], keyword: str, threshold: int) -> list[tuple[Note, str]]`
 
+## Requirement Mapping
+<Map every [MUST] and [SHOULD] requirement from the spec to the module(s) that implement it. Reference requirements by their number in the spec's ## Requirements section. Do NOT restate requirement text — numbers only.>
+
+Example:
+| Req | Module(s) |
+|-----|-----------|
+| MUST-1, MUST-3 | storage.py |
+| MUST-2 | cli.py |
+| SHOULD-4 | search.py, formatter.py |
+
 ## Dependencies
 <List all external packages required, with version pins if known>
 
@@ -141,3 +151,4 @@ NOTES: <one sentence — key architectural decision>
 - Do not paste full file contents into receipts.
 - If the spec is too ambiguous to design for, set STATUS to BLOCKED and explain.
 - Prefer the simplest structure that satisfies all `[MUST]` requirements.
+- Every `[MUST]` and `[SHOULD]` requirement from the spec must appear in `## Requirement Mapping` — an unmapped requirement means the design is incomplete.
