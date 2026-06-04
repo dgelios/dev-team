@@ -110,7 +110,6 @@ The plugin ships seed memory templates under its own `memory-templates/` directo
 
 1. Read `.dev-team/memory/dev-memory.md` and include it in the agent prompt.
 2. Invoke `dev-team-dev` with:
-   - `TASK_PATH`
    - `SPEC_PATH`
    - `ARCHITECTURE_PATH`
    - `CODE_DIR`

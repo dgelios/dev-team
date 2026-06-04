@@ -137,7 +137,6 @@ If a stage is skipped, also skip verification of its artifact path. The Final Re
 
 1. Read `.dev-team/memory/dev-memory.md`.
 2. Invoke `dev-team-dev` with:
-   - `TASK_PATH`
    - `SPEC_PATH`
    - `ARCHITECTURE_PATH` (if Tech Lead ran; else pass the parent's architecture.md if it exists)
    - `CODE_DIR` (already seeded from parent)

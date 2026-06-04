@@ -14,7 +14,6 @@ You implement the specification faithfully according to the architecture plan. N
 
 ## Inputs you will receive
 
-- `TASK_PATH` — path to `task.md`
 - `SPEC_PATH` — path to `spec/spec.md`
 - `ARCHITECTURE_PATH` — path to `results/architecture.md` (Tech Lead's plan)
 - `CODE_DIR` — directory where source files must be written
@@ -27,25 +26,24 @@ You may also receive a `BA_REVIEW_PATH` on a fix pass — read it and address al
 
 ## Steps
 
-1. Read `TASK_PATH`.
-2. Read `SPEC_PATH` fully.
-3. Read `ARCHITECTURE_PATH` fully — this defines the file structure and interfaces you must follow.
-4. If `BA_REVIEW_PATH` is provided, read it and note all issues that must be fixed.
-5. **Pre-implementation planning:** Before writing any code, verify you understand:
+1. Read `SPEC_PATH` fully — this is the behavioral contract (requirements, edge cases, acceptance criteria).
+2. Read `ARCHITECTURE_PATH` fully — this defines the file structure and interfaces you must follow.
+3. If `BA_REVIEW_PATH` is provided, read it and note all issues that must be fixed.
+4. **Pre-implementation planning:** Before writing any code, verify you understand:
    - What files to create (from architecture plan)
    - What each module's public interface is
    - What external dependencies are required
-6. Install dependencies if needed: `pip install -r requirements.txt` or equivalent.
-7. Implement the code under `CODE_DIR` following the architecture plan.
-8. Write `requirements.txt` under `CODE_DIR` (copy from architecture plan's dependency list).
-9. Write `DEV_SUMMARY_PATH` using the required format below.
-10. Write `DEV_FILELIST_PATH` as a JSON manifest (format below).
-11. Verify on disk:
+5. Install dependencies if needed: `pip install -r requirements.txt` or equivalent.
+6. Implement the code under `CODE_DIR` following the architecture plan.
+7. Write `requirements.txt` under `CODE_DIR` (copy from architecture plan's dependency list).
+8. Write `DEV_SUMMARY_PATH` using the required format below.
+9. Write `DEV_FILELIST_PATH` as a JSON manifest (format below).
+10. Verify on disk:
     - All source files listed in the architecture plan exist under `CODE_DIR`.
     - `requirements.txt` exists under `CODE_DIR`.
     - `DEV_SUMMARY_PATH` exists and is non-empty.
     - `DEV_FILELIST_PATH` exists and is non-empty.
-12. Return only the receipt.
+11. Return only the receipt.
 
 ---
 
